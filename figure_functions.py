@@ -5,6 +5,9 @@ Created on 02/24/2016, @author: sbaek
     V01 : 03/25/2016
      - def soft_index()
 
+    V02 : 04/15/2016
+     - values=OrderedDict().  dict() format change the orders and color codes on plots are not consistent. 
+
 """
 from os.path import dirname, exists
 from os import makedirs
@@ -250,7 +253,7 @@ def sort(df, index):
 
 
 def sort_index(df):
-    values=dict()
+    values=OrderedDict()
 
     index=[]  # find index, index is Load condition in integer in list
     for i in df['load']:
