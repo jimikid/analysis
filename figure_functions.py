@@ -1,8 +1,13 @@
 """
-Created on 02/24/2016    
+Created on 02/24/2016, @author: sbaek
     - initial release
 
-@author: sbaek
+    V01 : 03/25/2016
+     - def soft_index()
+
+    V02 : 04/15/2016
+     - values=OrderedDict().  dict() format change the orders and color codes on plots are not consistent. 
+
 """
 from os.path import dirname, exists
 from os import makedirs
@@ -36,30 +41,8 @@ def create_mapplot(data=[], fig_num=1, vlim='auto',  zlim='auto', ylim='auto', x
     if not(ylim=='auto'): ax.set_ylim(ylim[0], ylim[1])
     if not(xlim=='auto'): ax.set_xlim(xlim[0], xlim[1])
     if not(title=='auto'): ax.set_title(title)
-   
     plt.show()
-    
 
-    
-def save_figures(name='fig', path = ''):
-    
-    '''
-    save plots  - save fig in the present folder without path. 
-    '''
-    for i in range(100):
-        fig_name=name+'_%s.png' %i
-        if path=='':   
-            if not exists(fig_name):   
-                print 'save %s' %fig_name
-                plt.savefig(fig_name)
-                break   
-        else:                
-            if not exists(path+'/'+fig_name):   
-                print 'save %s' %fig_name
-                plt.savefig(fig_name)
-                break
-            else:pass
-    
     
 def create_2plot_2yaxis(data1=[], data2=[], data3=[], data4=[], label1=['x','y1','y2'], label2=['x','y1','y2'], marker='-'): 
     '''
@@ -201,22 +184,7 @@ def save_figures(name='fig', path = ''):
                 plt.savefig(fig_name)
                 break
             else:pass
-    
-     
-def sort_load(df, ref_index=0):
-    '''
-    
-    '''
 
-    df1=df[ref_index:ref_index+1]
-    for i in range(len(df)):     
-        if not (i == ref_index):
-            if (int(df['load'][i]>int(df['load'][ref_index])-5) and 
-                int(df['load'][i]<int(df['load'][ref_index])+5)):                     
-                df1=pd.concat([df1,df[i:i+1]])
-    label=str(int(round(sum(df1['load'])/len(df1['load']))))  #return string of load[%]
-    return df1, label
-        
    
 def create_path_dir(name='data', path = dirname(__file__)):
     '''
@@ -263,13 +231,40 @@ def search_csv(filename, dataset_path=''):
     return file_index 
 
 
+def sort_load(df, ref_index=0):
+    df1=df[ref_index:ref_index+1]
+    for i in range(len(df)):
+        if not (i == ref_index):
+            if (int(df['load'][i]>int(df['load'][ref_index])-5) and
+                int(df['load'][i]<int(df['load'][ref_index])+5)):
+                df1=pd.concat([df1,df[i:i+1]])
+    label=str(int(round(sum(df1['load'])/len(df1['load']))))  #return string of load[%]
+    return df1, label
+
+
 def sort(df, index):
-    values=OrderedDict()
-    temp=[]
     values=dict()
     for i in index:
         data, Load=sort_load(df, ref_index=i)
         data=data.set_index([range(len(data))]) 
+        values[Load]=data
+        print 'index : %s, Load : %s%%' %(i, Load)
+    return values
+
+
+def sort_index(df):
+    values=OrderedDict()
+
+    index=[]  # find index, index is Load condition in integer in list
+    for i in df['load']:
+        if int(i) in index: pass
+        elif int(i)+1 in index: pass
+        elif int(i)-1 in index: pass
+        else:index.append(int(round(i)))
+
+    for i in range(len(index)):
+        data, Load=sort_load(df, ref_index=i)
+        data=data.set_index([range(len(data))])
         values[Load]=data
         print 'index : %s, Load : %s%%' %(i, Load)
     return values
