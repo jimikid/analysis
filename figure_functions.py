@@ -42,11 +42,11 @@ def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=Tru
 
     cnt = 1
     for i in data:
-        subplot = 100 * sp + 10 + cnt  #
+
+        subplot = 100 * sp + 10 + cnt               #
         figure = fig.add_subplot(subplot)
         figure.grid(grid)
         plt.plot(i[0], i[1], marker)
-
         try:
             xlabel, ylabel = label[cnt - 1][0], label[cnt - 1][1]
             plt.xlabel(xlabel)
@@ -58,11 +58,16 @@ def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=Tru
             plt.ylim(ylimit)
         except:pass
 
-        plt.title(title)
         # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+
+        print '...%s'%cnt
+        if cnt==1:plt.title(title)                  #this has to be at the end. set title once on the top
+        else:pass
+
         cnt = cnt + 1
-    plt.show()
+    plt.show()                                      #show()hold plot.  cannot close.
+
 
     if save:
         if not title:
