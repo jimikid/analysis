@@ -8,6 +8,9 @@ Created on 02/24/2016, @author: sbaek
     V02 : 04/15/2016
      - values=OrderedDict().  dict() format change the orders and color codes on plots are not consistent. 
 
+    V03 : 06/01/2016
+     - plot() and plot_bar() are added
+
 """
 from os.path import dirname, exists
 from os import makedirs
@@ -19,10 +22,105 @@ from scipy import integrate
 from mpl_toolkits.mplot3d import axes3d
 from collections import OrderedDict
 
+
+def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=True, save=True):
+    '''
+    :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
+    :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..]
+    :param limit: [ (x1 label, y1 label), (x2 label, y2 label) ..]
+    :param fig_num:
+    :param title: ''
+    :param marker:
+    :param grid: Bool
+    :param save: Bool
+    :return:
+    '''
+
+    print '\n figure %s' % fig_num
+    fig = plt.figure(fig_num)
+    sp = len(data)
+
+    cnt = 1
+    for i in data:
+        subplot = 100 * sp + 10 + cnt  #
+        figure = fig.add_subplot(subplot)
+        figure.grid(grid)
+        plt.plot(i[0], i[1], marker)
+
+        try:
+            xlabel, ylabel = label[cnt - 1][0], label[cnt - 1][1]
+            plt.xlabel(xlabel)
+            plt.ylabel(ylabel)
+        except:pass
+        try:
+            xlimit, ylimit = limit[cnt - 1][0], limit[cnt - 1][1]
+            plt.xlim(xlimit)
+            plt.ylim(ylimit)
+        except:pass
+
+        plt.title(title)
+        # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        cnt = cnt + 1
+    plt.show()
+
+    if save:
+        if not title:
+            title='fig'
+        fig_name = title + '.png'
+        fig.savefig(fig_name)
+        print ' save %s' % (fig_name)
+        plt.close()
+
+    return fig
+
+
+def plot_bar(df, xticks,  title='', save=True):
+    '''
+    :*param df: []
+    :*param xticks:[]
+    :param title: ''
+    :param save: Bool
+    :return:
+    '''
+
+    for i in range(len(df)):  # iteration for frequencies , plots will be overlapped  with different colors
+        labels, values = [], []
+        for j in range(len(df.loc[i])):
+            try:
+                type(float(df.loc[i].values[j])) == float  # bar plot works with float only.  verify the value is float type
+                # print df.loc[i].index[j], df.loc[i].values[j]
+                labels.append(df.loc[i].index[j].split('_loss')[0])
+                values.append(df.loc[i].values[j])
+            except:
+                pass
+
+        objects = labels
+        y_pos = np.arange(len(objects))
+        performance = values
+        plt.barh(y_pos, performance, align='center', alpha=0.5)
+        xticks = xticks
+        plt.xticks(xticks)
+        plt.yticks(y_pos, objects)
+        plt.xlabel(title)
+        #plt.title('')
+    plt.show()
+
+    if save:
+        if not title:
+            title = 'fig_bar'
+        fig_name = title + '.png'
+        plt.savefig(fig_name)
+        print ' save %s' % (fig_name)
+        plt.close()
+
+
+
+
+
 def create_mapplot(data=[], fig_num=1, vlim='auto',  zlim='auto', ylim='auto', xlim='auto', label='auto', title='auto', linewidth=0.1):
 
-    fig=plt.figure(fig_num)  
-    
+    fig=plt.figure(fig_num)
     ax = fig.gca(projection='3d')    
     ax.plot_trisurf(data[0], data[1], data[2], cmap=cm.jet)
 
@@ -43,8 +141,7 @@ def create_mapplot(data=[], fig_num=1, vlim='auto',  zlim='auto', ylim='auto', x
     if not(title=='auto'): ax.set_title(title)
     plt.show()
 
-    
-def create_2plot_2yaxis(data1=[], data2=[], data3=[], data4=[], label1=['x','y1','y2'], label2=['x','y1','y2'], marker='-'): 
+def create_2plot_2yaxis(data1=[], data2=[], data3=[], data4=[], label1=['x','y1','y2'], label2=['x','y1','y2'], marker='-'):
     '''
     creat plots  with secondary y axis. Only work with 2 data   
     num : figure number,
@@ -93,57 +190,10 @@ def create_2plot_2yaxis(data1=[], data2=[], data3=[], data4=[], label1=['x','y1'
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
     plt.grid()   
 
-   
-def plot_range(list):
-    if min(list)<0:
-        ymin=min(list)*1.2
-    else: ymin=min(list)*0.8
-    if max(list)<0:
-        ymax=max(list)*0.8
-    else: ymax=max(list)*1.2    
-    return ymin, ymax
 
-def create_figures(data=[], fig_num=1, subplot=111, legend=[''], label=['x','y'], marker='-', grid=True, xlim='auto', ylim='auto', title=''): 
+def create_2yaxis(data1=[], data2=[], fig_num=1, label=['x','y1','y2'], marker='-'):
     '''
-    creat plots  - required series of data for x,y at least    
-    num : figure number,
-    plot is adjusted with max and min values with scale
-    '''
-
-    xmin, xmax=min(data[0][0]), max(data[0][0])  
-    ymin, ymax=plot_range(data[0][1])
-
-    fig=plt.figure(fig_num)  
-    figure=fig.add_subplot(subplot)
-    figure.grid(grid)
-
- 
-    for i in range(len(data)):
-        plt.plot(data[i][0], data[i][1], marker, label=legend[i])
-        plt.legend(loc='upper right', ncol=1)
-        
-        if xlim=='auto':
-            xmin, xmax=min(xmin,min(data[i][0])), max(xmax,max(data[i][0])) #find the most min, max values
-        else:xmin, xmax = xlim    
-        
-        if ylim=='auto':
-            ymin2, ymax2=plot_range(data[i][1])
-            ymin, ymax=min(ymin, ymin2), max(ymax, ymax2)
-        else:ymin, ymax = ylim
-    
-
-    plt.xlim(xmin, xmax)
-    plt.ylim(ymin, ymax)
-    plt.xlabel(label[0])
-    plt.ylabel(label[1])
-    plt.title(title)
-    #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-    #plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
-    #print ' figure xmin:%s xmax:%s ymin:%s ymax:%s' %(xmin, xmax, ymin, ymax) 
-
-def create_2yaxis(data1=[], data2=[], fig_num=1, label=['x','y1','y2'], marker='-'): 
-    '''
-    creat plots  with secondary y axis. Only work with 2 data   
+    creat plots  with secondary y axis. Only work with 2 data
     num : figure number,
     plot is adjusted with max and min values with scale
     '''
@@ -156,34 +206,15 @@ def create_2yaxis(data1=[], data2=[], fig_num=1, label=['x','y1','y2'], marker='
     ax1.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     # Make the y-axis label and tick labels match the line color.
     ax1.set_ylabel(label[1], color='b')
-    
-    
+
+
     ax2 = ax1.twinx()
-    ax2.plot(data2[0][0], data2[0][1], 'g'+marker)  
+    ax2.plot(data2[0][0], data2[0][1], 'g'+marker)
     ax2.set_ylabel(label[2], color='g')
-    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))    
+    ax2.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
     plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
 
-    plt.grid()   
-
-def save_figures(name='fig', path = ''):
-    
-    '''
-    save plots  - save fig in the present folder without path. 
-    '''
-    for i in range(100):
-        fig_name=name+'%s.png' %i
-        if path=='':   
-            if not exists(fig_name):   
-                print 'save %s' %fig_name
-                plt.savefig(fig_name)
-                break   
-        else:                
-            if not exists(path+fig_name):   
-                print 'save %s' %fig_name
-                plt.savefig(fig_name)
-                break
-            else:pass
+    plt.grid()
 
    
 def create_path_dir(name='data', path = dirname(__file__)):
