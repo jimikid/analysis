@@ -23,7 +23,7 @@ from mpl_toolkits.mplot3d import axes3d
 from collections import OrderedDict
 
 
-def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=True, save=True):
+def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=True, save=True, combine=False):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
     :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..]
@@ -42,8 +42,9 @@ def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=Tru
 
     cnt = 1
     for i in data:
-
         subplot = 100 * sp + 10 + cnt               #
+        if combine:
+            subplot=111
         figure = fig.add_subplot(subplot)
         figure.grid(grid)
         plt.plot(i[0], i[1], marker)
@@ -61,20 +62,19 @@ def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=Tru
         # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
-        print '...%s'%cnt
+        print ' ...%s'%cnt
         if cnt==1:plt.title(title)                  #this has to be at the end. set title once on the top
         else:pass
 
         cnt = cnt + 1
     plt.show()                                      #show()hold plot.  cannot close.
 
-
     if save:
         if not title:
             title='fig'
         fig_name = title + '.png'
         fig.savefig(fig_name)
-        print ' save %s' % (fig_name)
+        print ' save %s \n' % (fig_name)
         plt.close()
 
     return fig
