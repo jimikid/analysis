@@ -12,103 +12,119 @@ Created on 02/24/2016, @author: sbaek
      - plot() and plot_bar() are added
 
 """
-from os.path import dirname, exists
+from collections import OrderedDict
 from os import makedirs
-import pandas as pd
-from matplotlib import cm
+from os.path import dirname, exists
+
 import matplotlib.pyplot as plt
 import numpy as np
-from scipy import integrate
-from mpl_toolkits.mplot3d import axes3d
-from collections import OrderedDict
+import pandas as pd
+from matplotlib import cm
 
 
-def plot(data=[], label=[], limit=[], fig_num=1, title='', marker='o-', grid=True, save=True, combine=False):
+def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
+         grid=True, save=True, combine=False, hold=False,
+         xtick=None, xtick_label=None ,ytick=None, ytick_label=None,
+         legend=None, figsize=(8, 8)):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
-    :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..]
+    :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..] , if there is one set given, it is duplicated
     :param limit: [ (x1 label, y1 label), (x2 label, y2 label) ..]
     :param fig_num:
     :param title: ''
     :param marker:
     :param grid: Bool
     :param save: Bool
+    :param combine: Bool  #plot datasets on one plot
+    :param hold: Bool
+    :param legend: []  # list of str names for multiple datasets on one plot
+    :param figsize:
     :return:
     '''
 
     print '\n figure %s' % fig_num
-    fig = plt.figure(fig_num)
+    fig = plt.figure(fig_num, figsize=figsize)
+
     sp = len(data)
 
     cnt = 1
     for i in data:
-        subplot = 100 * sp + 10 + cnt               #
+        subplot = 100 * sp + 10 + cnt  #
         if combine:
-            subplot=111
+            subplot = 111
         figure = fig.add_subplot(subplot)
+        figure.set_aspect(0.5)
         figure.grid(grid)
-        plt.plot(i[0], i[1], marker)
-        try:
-            xlabel, ylabel = label[cnt - 1][0], label[cnt - 1][1]
+
+        if legend is not None:
+            print ' plot %s' % legend[cnt - 1]
+            figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
+            figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
+        figure.set_xscale("log")
+
+        if label is not None:
+            if len(label)==1:xlabel, ylabel = label[0][0], label[0][1]  #if one set is given duplicated
+            else:xlabel, ylabel = label[cnt - 1][0], label[cnt - 1][1]
+
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
-        except:pass
-        try:
+
+        if limit is not None:
             xlimit, ylimit = limit[cnt - 1][0], limit[cnt - 1][1]
             plt.xlim(xlimit)
             plt.ylim(ylimit)
-        except:pass
 
         # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
-        print ' ...%s'%cnt
-        if cnt==1:plt.title(title)                  #this has to be at the end. set title once on the top
-        else:pass
+        if xtick is not None:plt.xticks(xtick, xtick_label)
+        if ytick is not None: plt.yticks(ytick, ytick_label)
 
+        print ' ...%s' % cnt
+        if cnt == 1:
+            plt.title(title)  # this has to be at the end. set title once on the top
+        else: pass
         cnt = cnt + 1
-    plt.show()                                      #show()hold plot.  cannot close.
 
+
+    if hold: plt.show()  # show()hold plot.  cannot close.
     if save:
-        if not title:
-            title='fig'
-        fig_name = title + '.png'
+        if title is '':
+            fig_name = 'fig.png'
+        else:
+            fig_name = title + '.png'
         fig.savefig(fig_name)
         print ' save %s \n' % (fig_name)
-        plt.close()
+        plt.close(fig)
+    else:pass
 
     return fig
 
 
-def plot_bar(df, xticks,  title='', save=True):
+def plot_bar(df, xticks, title='', save=True):
     '''
-    :*param df: []
-    :*param xticks:[]
-    :param title: ''
-    :param save: Bool
+    - value referred to df.index.
+    - file format
+              flux_Sec_In_110_Bavg  flux_Sec_Out_110_Bavg
+path_02_B []              0.442064               0.176952
+path_04_B []              0.103560               0.256245
+
+    :param df: list
+    :param xticks: list
+    :param title:
+    :param save:
     :return:
     '''
 
-    for i in range(len(df)):  # iteration for frequencies , plots will be overlapped  with different colors
-        labels, values = [], []
-        for j in range(len(df.loc[i])):
-            try:
-                type(float(df.loc[i].values[j])) == float  # bar plot works with float only.  verify the value is float type
-                # print df.loc[i].index[j], df.loc[i].values[j]
-                labels.append(df.loc[i].index[j].split('_loss')[0])
-                values.append(df.loc[i].values[j])
-            except:
-                pass
-
-        objects = labels
-        y_pos = np.arange(len(objects))
-        performance = values
-        plt.barh(y_pos, performance, align='center', alpha=0.5)
+    for i in df.keys():  # iteration at the number of keys
+        labels=df.index.tolist()
+        y_pos = np.arange(len(labels))
+        plt.barh(y_pos, df[i], align='center', alpha=0.5)
         xticks = xticks
         plt.xticks(xticks)
-        plt.yticks(y_pos, objects)
+        plt.yticks(y_pos, labels)
         plt.xlabel(title)
-        #plt.title('')
+        # plt.title('')
     plt.show()
 
     if save:
@@ -118,8 +134,6 @@ def plot_bar(df, xticks,  title='', save=True):
         plt.savefig(fig_name)
         print ' save %s' % (fig_name)
         plt.close()
-
-
 
 
 
