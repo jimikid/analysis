@@ -25,7 +25,7 @@ from matplotlib import cm
 def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
          grid=True, save=True, combine=False, hold=False,
          xtick=None, xtick_label=None ,ytick=None, ytick_label=None,
-         legend=None, figsize=(8, 8)):
+         legend=None, figsize=(8, 8), scale=''):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
     :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..] , if there is one set given, it is duplicated
@@ -50,17 +50,20 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
     cnt = 1
     for i in data:
         subplot = 100 * sp + 10 + cnt  #
-        if combine:
-            subplot = 111
+        if combine: subplot = 111
         figure = fig.add_subplot(subplot)
-        figure.set_aspect(0.5)
-        figure.grid(grid)
+
+        if grid: figure.grid(grid)
 
         if legend is not None:
             print ' plot %s' % legend[cnt - 1]
             figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
             figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
-        figure.set_xscale("log")
+
+        if scale is 'log': figure.set_xscale("log")
+        if scale is 'loglog':
+            figure.set_xscale("log")
+            figure.set_yscale("log")
 
         if label is not None:
             if len(label)==1:xlabel, ylabel = label[0][0], label[0][1]  #if one set is given duplicated
@@ -74,8 +77,8 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
             plt.xlim(xlimit)
             plt.ylim(ylimit)
 
-        # plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
-        # plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
         if xtick is not None:plt.xticks(xtick, xtick_label)
         if ytick is not None: plt.yticks(ytick, ytick_label)
@@ -89,10 +92,8 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
 
     if hold: plt.show()  # show()hold plot.  cannot close.
     if save:
-        if title is '':
-            fig_name = 'fig.png'
-        else:
-            fig_name = title + '.png'
+        if title is '': fig_name = 'fig%s.png' %('_'+scale)
+        else: fig_name = title + '%s.png' %('_'+scale)
         fig.savefig(fig_name)
         print ' save %s \n' % (fig_name)
         plt.close(fig)
