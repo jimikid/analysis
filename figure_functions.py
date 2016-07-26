@@ -102,6 +102,43 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
     return fig
 
 
+def plot_eff(para, file_name):
+    '''
+    this function is for bench work only. it figures out measurement points by itself
+    :param para:
+    :param filename:
+    :return:
+    '''
+    print para['data_path']+'/'+file_name+'.csv'
+    df=pd.read_csv(para['data_path']+'/'+file_name+'.csv')
+    data1=sort(df, index=[j  for j in range(len(para['Load_pts']))])
+    Load, data = [], []
+    for key in data1.keys():
+        Load.append(key)
+        data.append(data1[key])
+
+    fig = plt.figure(1)
+    ax1 = fig.add_subplot(111)
+    markersize=6
+    plots, labels=[], []
+    for key in data1.keys():
+        l1,=ax1.plot(data1[key].volt_in, data1[key].eff, '-x', markersize=markersize)
+        plots.append(l1)
+        labels.append('Unit Eff. load %s%%' %key)
+
+    ax1.legend(plots, labels)
+    ax1.set_xlim(26, 46)
+    ax1.set_ylim(94.0, 97.0)
+    ax1.set_xlabel('Vdc[V]')
+    ax1.set_ylabel('Eff.[%]')
+    ax1.grid()
+    plt.title('P_rated= %sW, %s' %(para['p_rated'], para['ac_mode']))
+    name=para['data_path']+'/fig_%s_%.0fW_%s.png' %(para['ac_mode'], para['p_rated'], file_name)
+    plt.savefig(name)
+    plt.close()
+
+
+
 def plot_bar(df, xticks, title='', save=True):
     '''
     - value referred to df.index.
