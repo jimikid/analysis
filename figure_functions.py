@@ -11,6 +11,9 @@ Created on 02/24/2016, @author: sbaek
     V03 : 06/01/2016
      - plot() and plot_bar() are added
 
+    V04 : 08/05/2016
+     - move functions to eff_func.py
+
 """
 from collections import OrderedDict
 from os import makedirs
@@ -20,6 +23,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import cm
+
 
 
 def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
@@ -102,43 +106,6 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
     return fig
 
 
-def plot_eff(para, file_name):
-    '''
-    this function is for bench work only. it figures out measurement points by itself
-    :param para:
-    :param filename:
-    :return:
-    '''
-    print para['data_path']+'/'+file_name+'.csv'
-    df=pd.read_csv(para['data_path']+'/'+file_name+'.csv')
-    data1=sort(df, index=[j  for j in range(len(para['Load_pts']))])
-    Load, data = [], []
-    for key in data1.keys():
-        Load.append(key)
-        data.append(data1[key])
-
-    fig = plt.figure(1)
-    ax1 = fig.add_subplot(111)
-    markersize=6
-    plots, labels=[], []
-    for key in data1.keys():
-        l1,=ax1.plot(data1[key].volt_in, data1[key].eff, '-x', markersize=markersize)
-        plots.append(l1)
-        labels.append('Unit Eff. load %s%%' %key)
-
-    ax1.legend(plots, labels)
-    ax1.set_xlim(26, 46)
-    ax1.set_ylim(94.0, 97.0)
-    ax1.set_xlabel('Vdc[V]')
-    ax1.set_ylabel('Eff.[%]')
-    ax1.grid()
-    plt.title('P_rated= %sW, %s' %(para['p_rated'], para['ac_mode']))
-    name=para['data_path']+'/fig_%s_%.0fW_%s.png' %(para['ac_mode'], para['p_rated'], file_name)
-    plt.savefig(name)
-    plt.close()
-
-
-
 def plot_bar(df, xticks, title='', save=True):
     '''
     - value referred to df.index.
@@ -172,31 +139,6 @@ path_04_B []              0.103560               0.256245
         plt.savefig(fig_name)
         print ' save %s' % (fig_name)
         plt.close()
-
-
-
-def create_mapplot(data=[], fig_num=1, vlim='auto',  zlim='auto', ylim='auto', xlim='auto', label='auto', title='auto', linewidth=0.1):
-
-    fig=plt.figure(fig_num)
-    ax = fig.gca(projection='3d')    
-    ax.plot_trisurf(data[0], data[1], data[2], cmap=cm.jet)
-
-    if vlim=='auto':
-        ax.plot_trisurf(data[0], data[1], data[2], cmap=cm.jet, linewidth=linewidth)
-    else:
-        ax.plot_trisurf(data[0], data[1], data[2], cmap=cm.jet, vmin=vlim[0], vmax=vlim[1], linewidth=linewidth)
-    
-    if not(label=='auto'):
-        fontsize=12
-        ax.set_xlabel(label[0], fontsize=fontsize)
-        ax.set_ylabel(label[1], fontsize=fontsize)
-        ax.set_zlabel(label[2], fontsize=fontsize)
-    
-    if not(zlim=='auto'): ax.set_zlim(zlim[0], zlim[1])
-    if not(ylim=='auto'): ax.set_ylim(ylim[0], ylim[1])
-    if not(xlim=='auto'): ax.set_xlim(xlim[0], xlim[1])
-    if not(title=='auto'): ax.set_title(title)
-    plt.show()
 
 def create_2plot_2yaxis(data1=[], data2=[], data3=[], data4=[], label1=['x','y1','y2'], label2=['x','y1','y2'], marker='-'):
     '''
