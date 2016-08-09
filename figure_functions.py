@@ -223,9 +223,9 @@ def create_path_dir(name='data', path = dirname(__file__)):
     '''
     # the variables in definition are default, example          
     if not exists(path+'/'+name):
-        print 'make dir'
+        print ' make dir'
         makedirs(path+'/'+name)
-    newpath=path+'/'+name
+    newpath=path+'/'+name+'/'
     return newpath  
   
 

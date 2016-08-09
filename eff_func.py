@@ -14,7 +14,6 @@ import pandas as pd
 import numpy as np
 
 
-
 class eff:
     def __init__(self, file_name, para= None, data_path = None):
         '''
@@ -37,7 +36,7 @@ class eff:
         self.df = pd.read_csv(self.path + file_name + '.csv')
         self.sorted_data=self.sort_index()
 
-    def plot_eff(self, marker='o-', limit=None, figsize=(8, 8), markersize=6, add_labels=True, title=None):
+    def plot_eff(self, marker="o", limit=None, figsize=(5, 7), xlim=(26, 46), ylim=(94.0, 97.0), markersize=6, add_labels=True, title=None):
         self.load = self.sorted_data.keys()
 
         self.p_rated = ''
@@ -59,8 +58,8 @@ class eff:
             else:pass
 
         ax1.legend(plots, labels)
-        ax1.set_xlim(26, 46)
-        ax1.set_ylim(94.0, 97.0)
+        ax1.set_xlim(xlim)
+        ax1.set_ylim(ylim)
         if limit is not None:
             ax1.set_xlim(limit[0])
             ax1.set_ylim(limit[1])
