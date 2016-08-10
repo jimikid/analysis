@@ -16,14 +16,13 @@ Created on 02/24/2016, @author: sbaek
 
 """
 from collections import OrderedDict
-from os import makedirs
+from os import makedirs, listdir
 from os.path import dirname, exists
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from matplotlib import cm
-
 
 
 def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
@@ -261,40 +260,36 @@ def search_csv(filename, dataset_path=''):
     return file_index 
 
 
-def sort_load(df, ref_index=0):
-    df1=df[ref_index:ref_index+1]
-    for i in range(len(df)):
-        if not (i == ref_index):
-            if (int(df['load'][i]>int(df['load'][ref_index])-5) and
-                int(df['load'][i]<int(df['load'][ref_index])+5)):
-                df1=pd.concat([df1,df[i:i+1]])
-    label=str(int(round(sum(df1['load'])/len(df1['load']))))  #return string of load[%]
-    return df1, label
+def create_docx(path, key, filename='pics', width=None, fontsize=9):
+    from docx import Document
+    from docx.shared import Inches
+    from docx.shared import Pt
 
+    files=listdir(path)
+    file_list=[]
+    for i in files:
+        if i.find(key) is not -1:
+            print ' %s is found' %i
+            file_list.append(i)
 
-def sort(df, index):
-    values=dict()
-    for i in index:
-        data, Load=sort_load(df, ref_index=i)
-        data=data.set_index([range(len(data))]) 
-        values[Load]=data
-        print 'index : %s, Load : %s%%' %(i, Load)
-    return values
+    doc = Document()
+    para = doc.add_paragraph()
+    run = para.add_run()
+    font = run.font
+    font.name = 'Calibri'
+    font.size = Pt(fontsize)
 
+    if width is None:
+        width=5.5/len(file_list)
 
-def sort_index(df):
-    values=OrderedDict()
+    for pic in file_list:
+        short_path=path.split('/')[-3]+'/'+path.split('/')[-2]+'/'+path.split('/')[-1]
+        run.add_text(short_path+pic+':  \n')
 
-    index=[]  # find index, index is Load condition in integer in list
-    for i in df['load']:
-        if int(i) in index: pass
-        elif int(i)+1 in index: pass
-        elif int(i)-1 in index: pass
-        else:index.append(int(round(i)))
-
-    for i in range(len(index)):
-        data, Load=sort_load(df, ref_index=i)
-        data=data.set_index([range(len(data))])
-        values[Load]=data
-        print 'index : %s, Load : %s%%' %(i, Load)
-    return values
+    para = doc.add_paragraph()
+    run = para.add_run()
+    for pic in file_list:
+        run.add_text('  \n')
+        run.add_picture(path+pic, width= Inches(width))
+    doc.save('%s.docx' %filename)
+    print ' save %s.docs' %filename

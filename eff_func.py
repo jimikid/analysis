@@ -77,10 +77,10 @@ class eff:
         plt.close()
 
 
-    def plot_map(self, figsize=(5,7), xlim=(26, 46), ylim=(140, 300)):
+    def plot_map(self, item='eff', figsize=(5,7), xlim=(26, 46), ylim=(140, 300)):
         df = self.df
         p_ac_out = df['p_ac_out']
-        eff = df['eff']
+        eff = df[item]
 
         plt.figure(1, figsize=figsize)
         # volt_in = df['volt_in']
@@ -110,10 +110,10 @@ class eff:
 
         plt.xlim(xlim)
         plt.ylim(ylim)
-        plt.title("Eff. [%]")
+        plt.title("%s" %item)
         plt.xlabel('Vdc [V]')
         plt.ylabel('P_ac_out [W]')
-        name = self.path + '/Eff_Sat_' + self.filename + '.png'
+        name = self.path + '/%s_map_'%item + self.filename + '.png'
         print ' save : %s \n' % name
         plt.savefig(name)
         plt.close()
