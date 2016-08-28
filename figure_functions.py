@@ -28,7 +28,7 @@ from matplotlib import cm
 def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
          grid=True, save=True, combine=False, hold=False,
          xtick=None, xtick_label=None ,ytick=None, ytick_label=None,
-         legend=None, figsize=(8, 8), scale=''):
+         legend=[''], figsize=(8, 8), scale=''):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
     :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..] , if there is one set given, it is duplicated
@@ -56,12 +56,16 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
         if combine: subplot = 111
         figure = fig.add_subplot(subplot)
 
+        print ' plot %s' % legend[cnt - 1]
+        figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
+        figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
+
         if grid: figure.grid(grid)
 
-        if legend is not None:
-            print ' plot %s' % legend[cnt - 1]
-            figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
-            figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
+        #if legend is not None:
+        #    print ' plot %s' % legend[cnt - 1]
+        #    figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
+        #    figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
 
         if scale is 'log': figure.set_xscale("log")
         if scale is 'loglog':
@@ -80,6 +84,7 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
             plt.xlim(xlimit)
             plt.ylim(ylimit)
 
+        if grid: figure.grid(grid)
         #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
