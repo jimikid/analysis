@@ -28,7 +28,7 @@ from matplotlib import cm
 def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
          grid=True, save=True, combine=False, hold=False,
          xtick=None, xtick_label=None ,ytick=None, ytick_label=None,
-         legend=[''], figsize=(8, 8), scale=''):
+         legend=None, figsize=(8, 8), scale=''):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
     :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..] , if there is one set given, it is duplicated
@@ -56,9 +56,13 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
         if combine: subplot = 111
         figure = fig.add_subplot(subplot)
 
-        print ' plot %s' % legend[cnt - 1]
-        figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
-        figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
+        print ' plot %s' % title
+        if len(legend) == len (data):
+            figure.plot(i[0], i[1], marker, label=legend[cnt - 1])  # the number of legned has to to be same as plots
+            figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
+        else:
+            figure.plot(i[0], i[1], marker)
+
 
         if grid: figure.grid(grid)
 
