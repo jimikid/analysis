@@ -57,10 +57,12 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
         figure = fig.add_subplot(subplot)
 
         print ' plot %s' % title
-        if len(legend) == len (data):
+        try:
+            #if len(legend) == len (data):
             figure.plot(i[0], i[1], marker, label=legend[cnt - 1])  # the number of legned has to to be same as plots
             figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
-        else:
+        except:
+            #else:
             figure.plot(i[0], i[1], marker)
 
 
