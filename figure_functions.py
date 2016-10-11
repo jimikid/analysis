@@ -302,5 +302,5 @@ def create_docx(path, key, filename='pics', width=None, fontsize=9):
     for pic in file_list:
         run.add_text('  \n')
         run.add_picture(path+pic, width= Inches(width))
-    doc.save('%s.docx' %filename)
+    doc.save_prjt('%s.docx' % filename)
     print ' save %s.docs' %filename
