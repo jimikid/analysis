@@ -32,6 +32,7 @@ class waveforms:
         self.filepath = filepath
         self.filename=filename
         self.df=df
+        self.timestep= self.df['t'][len(self.df['t']) - 9] -self.df['t'][len(self.df['t']) - 10]
         self.return_str=str()
         self.sets = []
         self.labels = []
@@ -48,7 +49,7 @@ class waveforms:
         print '\n plot'
         for i in self.df.keys():
             if not (i == 't'):
-                print ' build a set of %s with time ' % i
+                #print ' build a set of %s with time ' % i
                 self.sets.append((self.df['t'], self.df[i]))  # [(df['t'], df['i_pri']*1),(df['t'], df['i_sec']*1)]
                 self.labels.append(('time', i))
         ff.plot(
@@ -75,7 +76,8 @@ class waveforms:
                 a, b = self.df['t'][len(self.df['t']) - 1], self.df['t'][0]
                 c, d = temp2[len(temp2) - 1], temp2[0]
                 rms = ((c - d) / (a - b)) ** 0.5
-                print ' RMS %s : %.2e '%(i, rms)
+                #print ' RMS %s : %.2e '%(i, rms)
+                print ' RMS %s : %.2f '%(i, rms)
                 data.append(rms)
         print '\n'
         return data
@@ -86,7 +88,8 @@ class waveforms:
         for i in self.df.keys():
             if not (i == 't'):
                 avg = sum(self.df[i])/len(self.df[i])
-                print ' AVG %s : %.2e '%(i, avg)
+                #print ' AVG %s : %.2e '%(i, avg)
+                print ' AVG %s : %.2f '%(i, avg)
                 data.append(avg)
         print '\n'
         return data
@@ -102,39 +105,27 @@ class waveforms:
         print '\n'
         return data
 
-    def get_freq(self, key, zeros):
+    def get_freq(self, zeros):
         # zeros is required for calculation
         # give freq based on the start and end points if zeros are less than 3
-        # this method is not finished.  zeros need to be considered later.
-        timestep= self.df['t'][len(self.df['t']) - 9] -self.df['t'][len(self.df['t']) - 10]
-        freq= 1.0/(len(self.df['t'])*timestep)
+        try:
+            freq = 1/(zeros[3][1] - zeros[1][1])  #pass zeros twice for one cycle
+        except: freq=0
         return freq
-
 
     def get_zero_crossing(self, key):
         # key of the data set in dataframe format is required
         # calculate timestep somewhere in the middle
         # zeros : [(index, time, value), (index, time, value), ..]  06/22/2016
         print ' find zeros with %s' %key
-        timestep= self.df['t'][len(self.df['t']) - 9] -self.df['t'][len(self.df['t']) - 10]
-        skip_pts = 2  #in case of noise
+        skip_pts = 10  #in case of noise
 
         zeros = []
-        for i in range(1,len(self.df[key]) - 1): # start from value at index 1 for comparison
+        for i in range(10,len(self.df[key]) - 10): # start from value at index 1 for comparison
             # This method returns -1 if x < y, returns 0 if x == y and 1 if x > y
-            if cmp(self.df[key][i], 0) + cmp(self.df[key][i - 1], 0) == 0 or self.df[key][i] == 0:
-                zeros.append((i, i * timestep, self.df[key][i]))
+            if cmp(self.df[key][i], -1e-6) + cmp(self.df[key][i - 2], 1e-6) == 0 or self.df[key][i] == 0: #cmp(self.df[key][i], 0) + cmp(self.df[key][i - 1], 0) == 0 -> polarity change
+            #if self.df[key][i] == 0:
+                zeros.append((i, i * self.timestep, self.df[key][i]))
                 i + skip_pts
             else:pass
         return zeros
-
-
-    def create_csv(self, key, zeros):
-        # zeros is required for calculation
-        # give freq based on the start and end points if zeros are less than 3
-        # this method is not finished.  zeros need to be considered later.
-
-        timestep= self.df['t'][len(self.df['t']) - 9] -self.df['t'][len(self.df['t']) - 10]
-        freq= 1.0/(len(self.df['t'])*timestep)
-        return freq
-
