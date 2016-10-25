@@ -23,7 +23,13 @@ class PCB(Ansys_Eddy):
     '''
     subclass inherited from Ansys_Eddy
     '''
-    def __init__(self, ProjectName='ProjectName', DesignName='DesignName', file_path=None):
+    def __init__(self, ProjectName='P1', DesignName='D1', file_path='C:/Users/sbaek/Documents/Ansoft/'):
+        '''
+        - default file_path has to be set for a existing folder
+        :param ProjectName:
+        :param DesignName:
+        :param file_path:
+        '''
 
         Ansys_Eddy.__init__(self, ProjectName, DesignName, file_path)
         self.z_crd=[]  #record z of each layer
