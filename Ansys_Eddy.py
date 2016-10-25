@@ -17,6 +17,7 @@ from collections import OrderedDict
 
 oAnsoftApp = win32com.client.Dispatch("Ansoft.ElectronicsDesktop")
 oDesktop = oAnsoftApp.GetAppDesktop()
+
 class Ansys_Eddy:
     """
            __INIT__     
@@ -26,7 +27,6 @@ class Ansys_Eddy:
     """
 
     def __init__(self, ProjectName='ProjectName', DesignName='DesignName', file_path=None):
-
         print '\n Start at %s ' % time.strftime("%d/%m/%Y %I:%M")
 
         self.p_name = ProjectName
@@ -49,6 +49,10 @@ class Ansys_Eddy:
 
     def get_filepath(self):
         return self.file_path
+
+    def get_edt(self):
+        oE = self.oD.SetActiveEditor("3D Modeler")
+        return oE
 
     def new_prjt(self):
         oProject = oDesktop.NewProject()
@@ -80,6 +84,53 @@ class Ansys_Eddy:
     def close_prjt(self):
         oDesktop.CloseProject(self.p_name)
 
+    def crt_region(self, pad=100, material='vacuum'):
+        '''
+        - if pad has one number, then put that into all direction
+        - other wise pad has to be [] with 6 parameters
+        :param pad: int or [int, int, ...]
+        :param material:
+        :return:
+        '''
+        self.act_coort()
+        # if pad has one number, then put that into all direction
+        padding=[]
+        if type(pad)==int:
+            for i in range(6):
+                padding.append(pad)
+        elif type(pad)==list:
+            padding=pad
+
+        oEditor = self.oD.SetActiveEditor("3D Modeler")
+        oEditor.CreateRegion(
+            [
+                "NAME:RegionParameters",
+                "+XPaddingType:=", "Percentage Offset",
+                "+XPadding:="	, str(padding[0]),
+                "-XPaddingType:="	, "Percentage Offset",
+                "-XPadding:="		, str(padding[1]),
+                "+YPaddingType:="	, "Percentage Offset",
+                "+YPadding:="		, str(padding[2]),
+                "-YPaddingType:="	, "Percentage Offset",
+                "-YPadding:="		, str(padding[3]),
+                "+ZPaddingType:="	, "Percentage Offset",
+                "+ZPadding:="		, str(padding[4]),
+                "-ZPaddingType:="	, "Percentage Offset",
+                "-ZPadding:="		, str(padding[5])
+            ],
+            [
+                "NAME:Attributes",
+                "Name:="		, "Region",
+                "Flags:="		, "Wireframe#",
+                "Color:="		, "(255 0 0)",
+                "Transparency:="	, 0.9,
+                "PartCoordinateSystem:=", "Global",
+                "UDMId:="		, "",
+                "MaterialValue:="	, "\""+material+"\"",
+                "SolveInside:="		, True
+            ])
+
+
     def del_objt(self, name):
         oEditor = self.oD.SetActiveEditor("3D Modeler")
         oEditor.Delete(
@@ -98,9 +149,6 @@ class Ansys_Eddy:
         for i in list:
             self.del_objt(i)
 
-    def get_edt(self):
-        oE = self.oD.SetActiveEditor("3D Modeler")
-        return oE
 
     def get_objts(self, material):
         oEditor = self.oD.SetActiveEditor("3D Modeler")
@@ -118,6 +166,25 @@ class Ansys_Eddy:
                 "RegionDepCSOk:=", False
             ])
 
+    def set_section(self, name, plane):
+        oEditor = self.oD.SetActiveEditor("3D Modeler")
+        oEditor.Section(
+            [
+                "NAME:Selections",
+                "Selections:="	, name,
+                "NewPartsModelFlag:="	, "Model"
+            ],
+            [
+                "NAME:SectionToParameters",
+                "CreateNewObjects:="	, True,
+                #"SectionPlane:="	, "YZ",
+                "SectionPlane:=", plane,
+                "SectionCrossObject:="	, False
+            ])
+
+        section_name=name+'_Section1'
+        print ' make a %s from %s on %s' % (section_name, name, plane)
+        return section_name
 
     def set_coort_z(self, name, z):
         oEditor = self.oD.SetActiveEditor("3D Modeler")
@@ -166,221 +233,224 @@ class Ansys_Eddy:
                     "BothSides:="		, False
                 ])
 
-class PCB(Ansys_Eddy):
-    '''
-    subclass inherited from Ansys_Eddy
-    '''
-    def __init__(self, ProjectName='ProjectName', DesignName='DesignName', file_path=None):
+##################################################
+########### set up
+##################################################
 
-        Ansys_Eddy.__init__(self, ProjectName, DesignName, file_path)
-        self.z_crd=[]  #record z of each layer
+    def set_analysis(self, freq=1e5):
+        print ' set analysis at %.1f kHz' %(freq/1000)
+        oModule = self.oD.GetModule("AnalysisSetup")
+        oModule.InsertSetup("EddyCurrent",
+                            [
+                                "NAME:Setup1",
+                                "Enabled:="	, True,
+                                "MaximumPasses:="	, 10,
+                                "MinimumPasses:="	, 2,
+                                "MinimumConvergedPasses:=", 1,
+                                "PercentRefinement:="	, 30,
+                                "SolveFieldOnly:="	, False,
+                                "PercentError:="	, 1,
+                                "SolveMatrixAtLast:="	, True,
+                                "PercentError:="	, 1,
+                                "UseCacheFor:="		, ["Pass"],
+                                "UseIterativeSolver:="	, False,
+                                "RelativeResidual:="	, 0.0001,
+                                #"Frequency:="		, "100kHz",
+                                "Frequency:="	, str(freq/1000.0)+"kHz",
+                                "NonLinearResidual:="	, 0.0001,
+                                "HasSweepSetup:="	, False,
+                                "UseHighOrderShapeFunc:=", False
+                            ])
 
-    #the thickness of copper can be added or fixed by [oz] or [mm].
-    def put_oz(self, oz=1):
-        self.thick= oz*35*10**-6  #1oz copper 35um thick [m]
-        return self.thick
+    def analyze(self):
+        print ' analyze'
+        self.oD.AnalyzeAll()
 
-    def put_mm(self, mm=35 * 10 ** -3):
-        self.thick= mm
-        return self.thick
 
-    def put_height(self, mm=35 * 10 ** -3):
+    def set_1Arms(self, name):
         '''
-        - self.height can be manually set.
-        '''
-        self.height= mm
-        return self.height
-
-    def stack_pcb(self, dimension=(50e-3, 50e-3), name= 'layer', origin=(0,0,0), thick=35e-6, material= "copper"):
-        '''
-        :param dimension: (x,y) dimension in m
-        :param name:  str
-        :param origin: the center of the dimension
-        :material
-
-        - default thickness is 1oz, 35um, thickness can be added with 'thick' valuable or 'putOz()'
-
-        '''
-        if not self.thick:
-            self.thick = thick  # in case thickness hasn't been set.
-            prt = '\n copper thickness is set: %s mm ' % (self.thick * 1000)
-            self.spec += prt
-            print prt
-        else:pass
-
-        self.set_coort_z(name=name + '_cood', z=origin[2])
-
-        oEditor = self.oD.SetActiveEditor("3D Modeler")
-        oEditor.CreateBox(
-            [
-                "NAME:BoxParameters",
-                "XPosition:="	, str(origin[0]*1000)+"mm",
-                "YPosition:="		, str(origin[1]*1000)+"mm",
-                #"ZPosition:="		, str(origin[2])+"m",
-                "ZPosition:="	, "0mm",#0 from the relative coordinate
-                "XSize:="		, str(dimension[0]*1000)+"mm",
-                "YSize:="		, str(dimension[1]*1000)+"mm",
-                "ZSize:="		, str(self.thick*1000)+"mm",
-
-            ],
-            [
-                "NAME:Attributes",
-                "Name:="		, name,
-                "Flags:="		, "",
-                "Color:="		, "(255 128 0)",
-                "Transparency:="	, 0.8,
-                "PartCoordinateSystem:=", "Global",
-                "UDMId:="		, "",
-                "MaterialValue:="	, "\""+material+"\"",
-                "SolveInside:="		, True
-            ])
-        self.act_coort()  #back to global coordinate
-
-
-
-    def layer_pcb(self, stacks, dimension=(50e-3, 50e-3),  origin=(0, 0, 0)):
-        '''
-         - calculate and set self.height (total thickness of the pcb).
-        :param stacks: [(thickness in oz, 'material'),..] from the bottom layer
-        :param dimension:
-        :param origin:
+        - name is a object in str
+        :param name: str
         :return:
         '''
-        z_origin=0
-        layer=1
-        die=1
-        for i in range(len(stacks)):
-            material= stacks[i][1]
-            thick=stacks[i][0]
-            self.put_oz(thick)
-            origin=(-dimension[0] / 2, -dimension[1] / 2, z_origin)
 
-            print '\n material : %s' % material
-            print ' origin : %s, %s, %s' %origin
-            print ' dimension : %s, %s' %dimension
-            print ' thickness : %s [um] ' %(self.thick*1e6)
+        print ' set 1Arms'
+        oModule = self.oD.GetModule("BoundarySetup")
+        oModule.AssignCurrent(
+            [
+                "NAME:Current1",
+                #"Objects:="		, ["layer_1_Section1"],
+                "Objects:="	, [name],
+                "Phase:="		, "0deg",
+                "Current:="		, "1.414A",
+                "IsSolid:="		, True,
+                "Point out of terminal:=", False
+            ])
 
-            if material=='copper':
-                name='layer_' + str(layer)
-                print ' %s\n' %name
-                self.stack_pcb(name=name, dimension=dimension,
-                              origin=origin,
-                              material= material)  # thickness has been set by 'putOz()'
-                layer +=1
-                self.z_crd.append(z_origin)
-                z_origin = z_origin + self.thick
-
-            else:
-                name='die_' + str(die)
-                print ' %s\n' %name
-                self.stack_pcb(name=name, dimension=dimension,
-                              origin=origin,
-                              material= material)  # thickness has been set by 'putOz()'
-                die +=1
-                z_origin = z_origin + self.thick
-            self.height=z_origin
-
-
-    def crt_via(self, name='via', loc=(0, 0), dia=0.5e-3, thick=35e-6):
+    def set_skin_mesh(self, names, depth, layer, length):
         '''
-        - self.height has to be set in advance
-        :param loc:
-        :param dia:
-        :param thick:
+        - not sure that how to calculate SurfTriMaxLength. manually check and put that in.
+        - better to use this function for script, not interactive process
+
+        :param names: ["layer_1","layer_2",...]
+        :param depth:
+        :param layer:
+        :param length:
         :return:
         '''
-        self.act_coort()
-        oEditor = self.oD.SetActiveEditor("3D Modeler")
-        oEditor.CreateCylinder(
+        print ' set mesh '
+        oModule = self.oD.GetModule("MeshSetup")
+        oModule.AssignSkinDepthOp(
             [
-                "NAME:CylinderParameters",
-                "XCenter:="	, str(loc[0]*1000)+"mm",
-                "YCenter:="		, str(loc[1]*1000)+"mm",
-                "ZCenter:="		, "0mm",
-                "Radius:="		, str(dia/2.0*1000)+"mm",
-                "Height:="		, str(self.height*1000)+"mm",
-                "WhichAxis:="		, "Z",
-                "NumSides:="		, "0"
-            ],
-            [
-                "NAME:Attributes",
-                "Name:="		, name,
-                "Flags:="		, "",
-                "Color:="		, "(143 175 143)",
-                "Transparency:="	, 0,
-                "PartCoordinateSystem:=", "Global",
-                "UDMId:="		, "",
-                "MaterialValue:="	, "\"copper\"",
-                "SolveInside:="		, True
+                #"NAME:SkinDepth1",
+                "NAME:"+names[0],
+                "Enabled:="	, True,
+                "Objects:="		, names,
+                "RestrictElem:="	, False,
+                "NumMaxElem:="		, "1000",
+                "SkinDepth:="		, str(depth * 1000.0) + "mm",
+                #"SurfTriMaxLength:="	, "0.1mm",
+                "SurfTriMaxLength:=", str(length * 1000.0) + "mm",
+                "NumLayers:="		, str(layer)
             ])
 
-        list_str=''
-        names=self.get_objts('copper')
-        names += self.get_objts('FR4_epoxy')
-        for i in range(len(names)):
-            if str(names[i]) != name:  #omit the tool part from the list
-                if i==len(names)-1:list_str += str(names[i]) #omit period at the end
-                else:list_str += str(names[i]+',')
+    def del_cal(self):
+        ''' Delete previous calculator expressions '''
+        try:
+            oModule = self.oD.GetModule("FieldsReporter")
+            oModule.CalcStack("clear")
+            oModule.ClearAllNamedExpr()
+            print '\n delete expressions in a calculator'
+        except:
+            pass
 
-        oEditor.Subtract(
-            [
-                "NAME:Selections",
-                "Blank Parts:="		, list_str,
-                "Tool Parts:="		, name
-            ],
-            [
-                "NAME:SubtractParameters",
-                "KeepOriginals:="	, True
-            ])
+    def del_rpt(self):
+        ''' Delete previous reports '''
+        try:
+            oModule = self.oD.GetModule("ReportSetup")
+            oModule.DeleteAllReports()
+            print ' delete plots'
+        except:
+            pass
 
-        oEditor.CreateCylinder(
-            [
-                "NAME:CylinderParameters",
-                "XCenter:=", str(loc[0] * 1000) + "mm",
-                "YCenter:="	, str(loc[1 ] *1000 ) +"mm",
-                "ZCenter:="		, "0mm",
-                "Radius:="		, str( (dia / 2.0-thick) *1000  ) +"mm",
-                "Height:="		, str(self. height *1000 ) +"mm",
-                "WhichAxis:="		, "Z",
-                "NumSides:="		, "0"
-            ],
-            [
-                "NAME:Attributes",
-                "Name:="		, name+"_p",
-                "Flags:="		, "",
-                "Color:="		, "(143 175 143)",
-                "Transparency:="	, 0,
-                "PartCoordinateSystem:=", "Global",
-                "UDMId:="		, "",
-                "MaterialValue:="	, "\"copper\"",
-                "SolveInside:="		, True
-            ])
+    def crt_rpt(self, names, format="Data Table"):  # form :"Rectangular Plot", "Data Table"
 
-        oEditor.Subtract(
-            [
-                "NAME:Selections",
-                "Blank Parts:="		, name,
-                "Tool Parts:="		, name+"_p"
-            ],
-            [
-                "NAME:SubtractParameters",
-                "KeepOriginals:="	, False
-            ])
-
-
-    def crt_vias(self, name='via_array', loc=((0, 0), (3e-3, 3e-3)), num=2, dia=0.5e-3, thick=35e-6):
+        if (format == 'Pot') or (format == 'Rectangular Plot'):  # 'Table' is fine
+            form="Rectangular Plot"
+        else:
+            form="Data Table"  #default is table
         '''
+        - plot calculator expression with frequency
+
+        :param names: ["Rac","Lac",..]
+        :param form:
+        :return:
+        '''
+        print '\n %s ' % time.strftime("%d/%m/%Y %I:%M")
+        oModule = self.oD.GetModule("ReportSetup")
+        oModule.CreateReport("XY Plot 1", "Fields", form, "Setup1 : LastAdaptive",
+                             [
+                                 "Domain:="	, "Sweep"
+                             ],
+                             [
+                                 "Freq:="		, ["All"],
+                                 "Phase:="		, ["0deg"],
+                             ],
+                             [
+                                 "X Component:="		, "Freq",
+                                 # "Y Component:="		, ["Rac","Lac"]
+                                 "Y Component:="		, names
+                             ], [])
+
+
+##################################################
+########### calculator
+##################################################
+    def cal_loss(self, name='AllObjects'):
+        '''
+        - name has to be a object, default is AllObjects (calculate total ohmic loss)
         :param name:
-        :param loc: ((x1,y1),(x2,y2))
-        :param num: the number of vias
-        :param dia:
-        :param thick:
         :return:
         '''
-        x1=loc[0][0]
-        y1=loc[0][1]
-        x2=loc[1][0]
-        y2=loc[1][1]
 
-        for i in range(num):
-            self.crt_via(name=name + '_%s' % (i + 1), loc=(x1 + (x2 - x1) / (num - 1) * i, y1 + (y2 - y1) / (num - 1) * i), dia=dia, thick=thick)
+        # add volume first
+        self.cal_vol(name)
+        oModule = self.oD.GetModule("FieldsReporter")
+        oModule.EnterQty("OhmicLoss")
+        oModule.EnterVol(name)
+        oModule.CalcOp("Integrate")
+
+        name = name + '_loss'
+        oModule.AddNamedExpression(name, "Fields")
+        print ' calculator : %s' % name
+        return name
+
+    def cal_vol(self, name):
+        '''
+        name has to be a object
+        name_list : list of the names in calculator in Maxwell
+        '''
+        oModule = self.oD.GetModule("FieldsReporter")
+        oModule.EnterScalar(1)
+        oModule.EnterVol(name)
+        oModule.CalcOp("Integrate")
+
+        name = name + '_vol'
+        oModule.AddNamedExpression(name, "Fields")
+        print ' calculator : %s' % name
+        return name
+
+    def cal_J_real(self, name):
+        '''
+        - name has to be a sheet
+        :param name:
+        :return:
+        '''
+        oModule = self.oD.GetModule("FieldsReporter")
+        oModule.EnterQty("J")
+        oModule.CalcOp("Real")
+        oModule.EnterSurf(name)
+        oModule.CalcOp("NormalComponent")
+        oModule.CalcOp("Integrate")
+
+        name=name+'_J_real'
+        oModule.AddNamedExpression(name, "Fields")
+        print ' calculator : %s'%name
+
+    def cal_energy(self):
+        '''
+        - can be used for inductance calculation when excitation is 1Arms
+        :return:
+        '''
+
+        oModule = oDesign.GetModule("FieldsReporter")
+        oModule.EnterQty("energy")
+        oModule.EnterVol("AllObjects")
+        oModule.CalcOp("Integrate")
+        oModule.AddNamedExpression("Energy", "Fields")
+
+    def cal_sub(self, names):
+        '''
+        - names[0]= names[1]-names[2]-names[3]...
+        :param names:  ['','','','']
+        :return:
+        '''
+        oModule = self.oD.GetModule("FieldsReporter")
+        oModule.CopyNamedExprToStack(names[0])
+        for i in range(1, len(names)):
+            oModule.CopyNamedExprToStack(names[i])
+            oModule.CalcOp("-")
+        oModule.AddNamedExpression(names[0], "Fields")
+
+    def cal_add(self, names):
+        '''
+        - names[0]= names[1]-names[2]-names[3]...
+        :param names:  ['','','','']
+        :return:
+        '''
+        oModule = self.oD.GetModule("FieldsReporter")
+        oModule.CopyNamedExprToStack(names[0])
+        for i in range(1, len(names)):
+            oModule.CopyNamedExprToStack(names[i])
+            oModule.CalcOp("+")
+        oModule.AddNamedExpression(names[0], "Fields")
