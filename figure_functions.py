@@ -25,14 +25,14 @@ import pandas as pd
 from matplotlib import cm
 
 
-def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
+def plot(data=[], filename='fig',label=None, limit=None, fig_num=1, title='', marker='o-',
          grid=True, save=True, combine=False, hold=False,
-         xtick=None, xtick_label=None ,ytick=None, ytick_label=None,
+         xtick=None, xtick_label=None, ytick=None, ytick_label=None,
          legend=None, figsize=(8, 8), scale=''):
     '''
     :param data: [ ([x1 values],[y1 values]), ([x2 values],[y2 values]) ..]
     :param label: [ (x1 label, y1 label), (x2 label, y2 label) ..] , if there is one set given, it is duplicated
-    :param limit: [ (x1 label, y1 label), (x2 label, y2 label) ..]
+    :param limit: [ (x1 limit, y1 limit), (x2 limit, y2 limit) ..]
     :param fig_num:
     :param title: ''
     :param marker:
@@ -56,7 +56,7 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
         if combine: subplot = 111
         figure = fig.add_subplot(subplot)
 
-        print ' plot %s' % title
+        print ' plot %s' % filename
         try:
             #if len(legend) == len (data):
             figure.plot(i[0], i[1], marker, label=legend[cnt - 1])  # the number of legned has to to be same as plots
@@ -65,13 +65,7 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
             #else:
             figure.plot(i[0], i[1], marker)
 
-
         if grid: figure.grid(grid)
-
-        #if legend is not None:
-        #    print ' plot %s' % legend[cnt - 1]
-        #    figure.plot(i[0], i[1], marker, label=legend[cnt - 1])
-        #    figure.legend(loc='upper left')  # need to set the location.  label is given in plot()
 
         if scale is 'log': figure.set_xscale("log")
         if scale is 'loglog':
@@ -81,7 +75,6 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
         if label is not None:
             if len(label)==1:xlabel, ylabel = label[0][0], label[0][1]  #if one set is given duplicated
             else:xlabel, ylabel = label[cnt - 1][0], label[cnt - 1][1]
-
             plt.xlabel(xlabel)
             plt.ylabel(ylabel)
 
@@ -91,7 +84,7 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
             plt.ylim(ylimit)
 
         if grid: figure.grid(grid)
-        #plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+        plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
         plt.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
 
         if xtick is not None:plt.xticks(xtick, xtick_label)
@@ -106,8 +99,7 @@ def plot(data=[], label=None, limit=None, fig_num=1, title='', marker='o-',
 
     if hold: plt.show()  # show()hold plot.  cannot close.
     if save:
-        if title is '': fig_name = 'fig%s.png' %('_'+scale)
-        else: fig_name = title + '%s.png' %('_'+scale)
+        fig_name = filename + '.png'
         fig.savefig(fig_name)
         print ' save %s \n' % (fig_name)
         plt.close(fig)
