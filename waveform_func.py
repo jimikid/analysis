@@ -124,7 +124,9 @@ class waveforms:
 
         try:
             freq = 1/(zeros[2][1] - zeros[0][1])  #pass zeros twice for one cycle
-        except: freq=0
+        except:
+            freq = 1 / (zeros[1][1] - zeros[0][1])/2 # in case the number of zeroes detected is not enough
+
         return freq
 
     def get_zero_crossing_waveforms(self, key=None, cycle=1, replace=True):
@@ -144,6 +146,24 @@ class waveforms:
         self.df=df2
         return df2
 
+
+    def get_zero_rise_crossing_waveforms(self, key=None, cycle=1, replace=True):
+        if key:
+            zeros = self.get_zero_rise_crossing(key=key)
+        else:
+            zeros = self.get_zero_crossing(key=self.get_labels()[3])  # if there is no zeroes in, used channel 4 to get zeros
+
+        length=int(zeros[cycle][0] - zeros[0][0])
+        data=OrderedDict({'t': [i * self.timestep for i in range(length)]})
+        for i in self.df.keys():
+            if (i != 't') and not ('Unnamed' in i):
+                data.update({i: self.df[i][zeros[0][0]:zeros[cycle][0]]}) # the number of zeros are a half of get_zero_crossing()
+
+        df2=pd.DataFrame(data)
+        df2=df2.set_index([range(len(df2))])
+        self.df=df2
+        return df2
+
     def get_zero_crossing(self, key):
         # key of the data set in dataframe format is required
         # zeros : [(index, time, value), (index, time, value), ..]  06/22/2016
@@ -156,6 +176,19 @@ class waveforms:
                 zeros.append((j, self.df['t'][j], self.df[key][j]))
                 j += skip_pts
             else: j+=1
+        return zeros
 
 
+    def get_zero_rise_crossing(self, key):
+        # key of the data set in dataframe format is required
+        # zeros : [(index, time, value), (index, time, value), ..]  06/22/2016
+        print ' find zeros with %s' % key
+        skip_pts = 10  # in case of noise
+        zeros, j = [], 5
+        while (j < len(self.df[key])-5):
+            if (self.df[key][j+4] > self.df[key][j - 4]) and (abs(self.df[key][j]) < 0.1):  # cmp(self.df[key][i], 0) + cmp(self.df[key][i - 1], 0) == 0 -> polarity change
+                zeros.append((j, self.df['t'][j], self.df[key][j]))
+                j += skip_pts
+            else:
+                j += 1
         return zeros
