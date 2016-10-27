@@ -60,7 +60,8 @@ class waveforms:
                 l.append(i)
         return l
 
-    def get_rms(self, df=pd.DataFrame(), show=True):
+    def get_rms(self, df=pd.DataFrame({}), show=False):
+        #print 'df: %s' %df
         if not df.empty:
             df2=df
         else:df2=self.df
@@ -76,12 +77,12 @@ class waveforms:
                 if show:
                     # print ' RMS %s : %.2e '%(i, rms)
                     print ' RMS %s : %.2f ' % (key, rms)
-                data_dict.update({key: rms})
+                data_dict.update({key+'_rms': rms})
         #print '\n'
         return data_dict
 
 
-    def get_avg(self, df=pd.DataFrame(), show=True):
+    def get_avg(self, df=pd.DataFrame(), show=False):
         if not df.empty:
             df2=df
         else:df2=self.df
@@ -94,12 +95,12 @@ class waveforms:
                 if show:
                     #print ' AVG %s : %.2e '%(i, avg)
                     print ' AVG %s : %.2f '%(key, avg)
-                data_dict.update({key: avg})
+                data_dict.update({key+'_avg': avg})
         #print '\n'
         return data_dict
 
 
-    def get_pkpk(self, df=pd.DataFrame(), show=True):
+    def get_pkpk(self, df=pd.DataFrame(), show=False):
         if not df.empty:
             df2=df
         else:df2=self.df
@@ -112,7 +113,7 @@ class waveforms:
                 if show:
                     #print ' pk-pk %s : %.2e '%(key, pkpk)
                     print ' pk-pk %s : %.2f ' % (key, pkpk)
-                data_dict.update({key: pkpk})
+                data_dict.update({key+'_pkpk': pkpk})
         #print '\n'
         return data_dict
 
