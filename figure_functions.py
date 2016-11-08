@@ -1,18 +1,16 @@
 """
 Created on 02/24/2016, @author: sbaek
     - initial release
-
     V01 : 03/25/2016
      - def soft_index()
-
     V02 : 04/15/2016
      - values=OrderedDict().  dict() format change the orders and color codes on plots are not consistent. 
-
     V03 : 06/01/2016
      - plot() and plot_bar() are added
-
     V04 : 08/05/2016
      - move functions to eff_func.py
+    V04 : 11/08/2016
+     - if limit has one (xlimit, ylimit), then apply them into all plots, otherwise [ (x1 limit, y1 limit), (x2 limit, y2 limit) ..]
 
 """
 from collections import OrderedDict
@@ -79,9 +77,14 @@ def plot(data=[], filename='fig',label=None, limit=None, fig_num=1, title='', ma
             plt.ylabel(ylabel)
 
         if limit is not None:
-            xlimit, ylimit = limit[cnt - 1][0], limit[cnt - 1][1]
-            plt.xlim(xlimit)
-            plt.ylim(ylimit)
+            if isinstance(limit, tuple):
+                #if limit has one (xlimit, ylimit), then apply them into all plots
+                xlimit, ylimit = limit
+            else:
+                # otherwise,  limit has a list of tuples [(xlimit, ylimit), (xlimit, ylimit)..] , then apply them into each plots in order
+                xlimit, ylimit = limit[cnt - 1][0], limit[cnt - 1][1]
+                plt.xlim(xlimit)
+                plt.ylim(ylimit)
 
         if grid: figure.grid(grid)
         plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
