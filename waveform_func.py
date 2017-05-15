@@ -14,7 +14,7 @@ import os
 from os.path import abspath, dirname, exists
 import csv, time
 import pandas as pd
-from scipy import integrate
+#from scipy import integrate
 import figure_functions as ff
 import matplotlib.pyplot as plt
 from collections import OrderedDict
